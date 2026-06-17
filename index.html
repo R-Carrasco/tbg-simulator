@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twisted bilayer graphene · Bistritzer–MacDonald</title>
+<style>
+  /* ── Identity: deep graphite + moiré interference ─────────────────────── */
+  :root{
+    --bg:#16171d; --panel:#1e2028; --panel2:#252833; --borde:#33374233;
+    --tinta:#ece9e1; --apagado:#9a9eab; --tenue:#6d717e;
+    --plana:#ff7a55;            /* flat bands / "magic" accent              */
+    --remota:#7d96b4;           /* remote bands                              */
+    --capa1:#8fb6d9; --capa2:#ff8a63;
+    --ok:#86c9a8;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--tinta);font-family:var(--sans);font-size:15px}
+  ::selection{background:#ff7a5544}
+
+  header.cab{display:flex;gap:24px;align-items:stretch;justify-content:space-between;
+    padding:26px 30px 18px;border-bottom:1px solid var(--borde);flex-wrap:wrap}
+  .ceja{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--tenue);margin:0 0 8px}
+  h1{font-family:var(--serif);font-weight:500;font-size:clamp(26px,3.4vw,38px);margin:0;letter-spacing:.01em}
+  .sub{color:var(--apagado);margin:8px 0 0;max-width:62ch;line-height:1.45}
+  .sub code{font-family:var(--mono);font-size:.86em;color:var(--tinta)}
+  .franjaMoire{border-top:1px solid var(--borde);border-bottom:1px solid var(--borde);background:#121319;margin-top:18px}
+  #moire{display:block;width:100%;height:1000px}
+  @media (max-width:880px){#moire{height:740px}}
+  .pieMoire{font-family:var(--mono);font-size:10.5px;color:var(--tenue);text-align:center;
+    margin:0;padding:7px 14px 11px}
+
+  /* full-width angle selection bar */
+  .barraTheta{grid-column:1/-1;background:var(--panel);border:1px solid var(--borde);
+    border-radius:10px;padding:14px 24px 10px;display:flex;gap:30px;align-items:center;flex-wrap:wrap}
+  .barraTheta .thetaGrande{margin:0}
+  .zonaSlider{flex:1;min-width:300px}
+
+  main{display:grid;grid-template-columns:288px 1fr;gap:18px;padding:20px 30px 8px;max-width:1380px;margin:0 auto}
+  @media (max-width:880px){main{grid-template-columns:1fr}}
+
+  /* ── Control panel ─────────────────────────────────────────────────────── */
+  .control{background:var(--panel);border:1px solid var(--borde);border-radius:10px;padding:18px 18px 14px;
+    align-self:start;position:sticky;top:14px}
+  @media (max-width:880px){.control{position:static}}
+  .thetaGrande{font-family:var(--serif);font-style:italic;font-size:54px;line-height:1;
+    display:flex;align-items:baseline;gap:6px;margin:2px 0 2px}
+  .thetaGrande .unidad{font-size:26px;color:var(--apagado)}
+  .etqTheta{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--tenue)}
+
+  .pistaSlider{position:relative;margin:14px 0 2px}
+  input[type=range]{width:100%;appearance:none;background:transparent;height:26px;margin:0;cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;
+    background:linear-gradient(90deg,#3a3f4d,#5a5040 52%,#3a3f4d)}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;
+    background:var(--plana);border:2.5px solid #16171d;margin-top:-7px;box-shadow:0 0 0 1.5px var(--plana)}
+  input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:#3a3f4d}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:var(--plana);border:2.5px solid #16171d;box-shadow:0 0 0 1.5px var(--plana)}
+  input[type=range]:focus-visible{outline:2px solid var(--plana);outline-offset:4px;border-radius:4px}
+  .marcaMagica{position:absolute;top:20px;transform:translateX(-50%);color:var(--plana);
+    font-family:var(--mono);font-size:10px;text-align:center;pointer-events:none}
+  .escala{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;
+    color:var(--tenue);margin-top:14px}
+
+  .campo{margin-top:14px}
+  .campo label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    color:var(--tenue);margin-bottom:5px}
+  select{width:100%;background:var(--panel2);color:var(--tinta);border:1px solid var(--borde);
+    border-radius:6px;padding:7px 8px;font:inherit}
+  select:focus-visible{outline:2px solid var(--plana)}
+  .chk{display:flex;gap:8px;align-items:center;margin-top:13px;color:var(--apagado);cursor:pointer}
+  .chk input{accent-color:var(--plana);width:15px;height:15px}
+
+  dl.datos{margin:16px 0 0;border-top:1px solid var(--borde);padding-top:10px;
+    display:grid;grid-template-columns:auto 1fr;gap:5px 12px}
+  dl.datos dt{color:var(--tenue);font-size:12.5px}
+  dl.datos dd{margin:0;font-family:var(--mono);font-size:12.5px;text-align:right}
+  dl.datos dd.acento{color:var(--plana)}
+  .estado{font-family:var(--mono);font-size:11px;color:var(--tenue);min-height:15px;margin:12px 0 0}
+
+  /* ── Chart cards ───────────────────────────────────────────────────────── */
+  .lienzos{display:flex;flex-direction:column;gap:18px;min-width:0}
+  figure.tarjeta{margin:0;background:var(--panel);border:1px solid var(--borde);border-radius:10px;
+    padding:12px 14px 10px;min-width:0}
+  figcaption{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;color:var(--apagado);margin:0 2px 8px}
+  canvas.graf{width:100%;display:block;background:#181a21;border-radius:6px}
+  #cvBandas{height:430px} #cvBarrido,#cvDos{height:250px}
+  .fila{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:1020px){.fila{grid-template-columns:1fr}}
+  button{background:var(--panel2);color:var(--tinta);border:1px solid #3a3f4d;border-radius:6px;
+    padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+  button:hover{border-color:var(--plana);color:var(--plana)}
+  button:focus-visible{outline:2px solid var(--plana)}
+  button:disabled{opacity:.45;cursor:default}
+  .notaGraf{font-family:var(--mono);font-size:11px;color:var(--tenue);margin:7px 2px 0;min-height:14px}
+  .notaGraf b{color:var(--plana);font-weight:600}
+
+  footer{padding:18px 30px 30px;max-width:1380px;margin:0 auto;color:var(--tenue);
+    font-size:12px;line-height:1.7}
+  footer code{font-family:var(--mono);color:var(--apagado)}
+  @media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+
+<header class="cab">
+  <div>
+    <p class="ceja">CONDENSED MATTER · BISTRITZER–MacDONALD CONTINUUM MODEL</p>
+    <h1>Twisted bilayer graphene</h1>
+    <p class="sub">One valley (K), one spin. Intralayer Dirac cones rotated by <code>∓θ/2</code>,
+      interlayer tunneling <code>T_j = w_AA·σ0 + w_AB·[cos(jφ)σx + sin(jφ)σy]</code> with
+      <code>w_AA = 79.7 meV &lt; w_AB = 97.5 meV</code> (relaxed lattice). Move the angle and
+      watch the central bands flatten at the first magic angle.</p>
+  </div>
+</header>
+
+<main>
+  <section class="barraTheta">
+    <div>
+      <p class="etqTheta">TWIST ANGLE</p>
+      <div class="thetaGrande"><span id="numTheta">1.085</span><span class="unidad">°</span></div>
+    </div>
+    <div class="zonaSlider">
+      <div class="pistaSlider">
+        <input type="range" id="sliTheta" min="0" max="1000" step="1" value="500"
+               aria-label="Twist angle in degrees (piecewise logarithmic scale)">
+        <span class="marcaMagica" id="marcaMagica">▲<br>θ*</span>
+      </div>
+      <div class="escala"><span>0.5°</span><span>1.085° (piecewise log scale)</span><span>5°</span></div>
+    </div>
+  </section>
+
+  <aside class="control">
+    <div class="campo">
+      <label for="selN">BASIS CUTOFF RADIUS</label>
+      <select id="selN">
+        <option value="2">N_sh = 2 · fast (dim 56)</option>
+        <option value="3" selected>N_sh = 3 · converged (dim 132)</option>
+        <option value="4">N_sh = 4 · fine, for θ &lt; 0.7° (dim 228, slow)</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label for="selRelax">LATTICE RELAXATION</label>
+      <select id="selRelax">
+        <option value="rel" selected>Relaxed · w_AA = 79.7 ≠ w_AB = 97.5 meV</option>
+        <option value="rig">Rigid · w_AA = w_AB = 97.5 meV</option>
+      </select>
+    </div>
+    <label class="chk"><input type="checkbox" id="chkZoom"> Zoom to the flat bands</label>
+    <label class="chk"><input type="checkbox" id="chkMoire" checked> Show the moiré superlattice
+      (bottom strip; turn off to change θ with minimal latency)</label>
+
+    <dl class="datos">
+      <dt>λ moiré</dt><dd id="rLam">–</dd>
+      <dt>k_θ</dt><dd id="rKt">–</dd>
+      <dt>α = w_AB/ħv_Fk_θ</dt><dd id="rAlpha">–</dd>
+      <dt>W (path)</dt><dd id="rW" class="acento">–</dd>
+      <dt>v*/v_F at K</dt><dd id="rV" class="acento">–</dd>
+    </dl>
+    <p class="estado" id="estado"></p>
+  </aside>
+
+  <section class="lienzos">
+    <figure class="tarjeta">
+      <figcaption><span>BANDS · Γ → K → M → K′ → Γ PATH OF THE MOIRÉ MINI-BZ</span>
+        <span id="etqCalidad"></span></figcaption>
+      <canvas id="cvBandas" class="graf"></canvas>
+    </figure>
+    <div class="fila">
+      <figure class="tarjeta">
+        <figcaption><span>W(θ) SWEEP · MAGIC ANGLE</span>
+          <button id="btnBarrido">Find θ*</button></figcaption>
+        <canvas id="cvBarrido" class="graf"></canvas>
+        <p class="notaGraf" id="txtBarrido">W(θ): combined width of the two central bands.
+          The sweep uses N_sh = 2 and refines the minimum with N_sh = 3.</p>
+      </figure>
+      <figure class="tarjeta">
+        <figcaption><span>DENSITY OF STATES</span>
+          <button id="btnDos">Compute DOS</button></figcaption>
+        <canvas id="cvDos" class="graf"></canvas>
+        <p class="notaGraf" id="txtDos">As θ* is approached, the van Hove singularities
+          collapse into a single giant peak at E ≈ 0.</p>
+      </figure>
+    </div>
+  </section>
+</main>
+
+<section class="franjaMoire" id="seccionMoire">
+  <canvas id="moire" aria-label="Moiré pattern of two honeycomb lattices rotated by ±θ/2"></canvas>
+  <p class="pieMoire">two honeycomb lattices (A and B atoms with their three bonds, like graphene)
+    rotated by ±θ/2 about an AA point — to scale: λ_moiré = a/(2·sin(θ/2)).
+    With the relaxed lattice, the first-harmonic displacement field
+    u±(r) = ±u₀·Σ_j b̂_j·sin(b_j·δ(r)) is applied (qualitative): the AA regions contract and the
+    triangular AB/BA domains grow, with their domain walls</p>
+</section>
+
+<footer>
+  Conventions: <code>ħv_F = 2.1354·a</code> with <code>a = 0.246 nm</code> ·
+  <code>k_θ = 2|K|·sin(θ/2)</code>, <code>|K| = 4π/3a</code> ·
+  <code>q₀ = k_θ(0,−1)</code> and ±120° rotations · plane-wave basis with circular cutoff
+  of radius <code>N_sh·|b₁|</code> centered at <code>q₀/2</code> (symmetric between layers) ·
+  mini-BZ: K = (0,0), K′ = (0,k_θ), M = (0,k_θ/2), Γ = (√3/2,1/2)k_θ.
+  Relaxation: <code>relaxed</code> uses w_AA = 79.7 ≠ w_AB = 97.5 meV (corrugation
+  reduces AA/BB tunneling and opens the flat-band gaps at Γ);
+  <code>rigid</code> uses w_AA = w_AB = 97.5 meV (the central bands touch the
+  remote ones). In the strip, the relaxed pattern applies the first harmonic
+  u±(r) = ±u₀·Σ_j b̂_j·sin(b_j·δ(r)) with θ_loc(AA)/θ = 1+η, η = 0.605/θ²[°]
+  (calibrated to ×1.5 at θ ≈ 1.1°; qualitative visualization).
+  The Hermitian solver (Householder + QL) reproduces SciPy to within &lt; 10⁻¹⁴ eV.
+  With the relaxed parameters, the reference Python script places the minimum of W at
+  <code>θ* = 1.085°</code> (validated: 1.05° ≤ θ* ≤ 1.10°).
+</footer>
+
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHYSICS BLOCK — exact mirror of tbg_bm.py (validated against SciPy)
+   ═══════════════════════════════════════════════════════════════════════════ */
+const A_CC = 0.246, HBARVF = 2.1354 * A_CC, K_DIRAC = 4 * Math.PI / (3 * A_CC);
+const WAA = 0.0797, WAB = 0.0975, PHI = 2 * Math.PI / 3;
+
+/* Moiré geometry: k_θ, transfer vectors q_j and reciprocal lattice b1, b2 */
+function geometria(thetaDeg) {
+  const th = thetaDeg * Math.PI / 180;
+  const kt = 2 * K_DIRAC * Math.sin(th / 2);
+  const qs = [[0, -kt], [Math.sqrt(3) / 2 * kt, .5 * kt], [-Math.sqrt(3) / 2 * kt, .5 * kt]];
+  return { thetaDeg, kt, qs,
+    b1: [qs[1][0] - qs[0][0], qs[1][1] - qs[0][1]],
+    b2: [qs[2][0] - qs[0][0], qs[2][1] - qs[0][1]] };
+}
+
+/* Truncated basis: plane waves k+G (layer 1) and k+G+q0 (layer 2) within a
+   circle of radius N_sh·|b1| centered at q0/2 (cutoff symmetric between layers).
+   The set of indices (m,n) is independent of θ (everything scales with k_θ). */
+function baseMomentos(nsh, geo) {
+  const { qs, b1, b2 } = geo;
+  const cx = .5 * qs[0][0], cy = .5 * qs[0][1];
+  const R = (nsh + 1e-9) * Math.hypot(b1[0], b1[1]), M = nsh + 3;
+  const s1 = [], s2 = [];
+  for (let m = -M; m <= M; m++) for (let n = -M; n <= M; n++) {
+    const gx = m * b1[0] + n * b2[0], gy = m * b1[1] + n * b2[1];
+    if (Math.hypot(gx - cx, gy - cy) <= R) s1.push([m, n]);
+    if (Math.hypot(gx + qs[0][0] - cx, gy + qs[0][1] - cy) <= R) s2.push([m, n]);
+  }
+  const idx2 = new Map();
+  s2.forEach((mn, i) => idx2.set(mn[0] + "," + mn[1], i));
+  return { s1, s2, idx2 };
+}
+
+/* Model: interlayer part (independent of k and θ) + work buffers.
+   T_j connects layer 1 at G with layer 2 at G+Δ_j (Δ0=0, Δ1=b1, Δ2=b2),
+   implementing the momentum transfer q_j of the BM model.
+   wAA is a parameter: relaxed → wAA = 79.7 meV < wAB (corrugation reduces
+   AA/BB tunneling); rigid → wAA = wAB = 97.5 meV. */
+function crearModelo(nsh, wAA) {
+  const geo = geometria(1.0);                       // only fixes the (m,n)
+  const base = baseMomentos(nsh, geo);
+  const n1 = base.s1.length, dim = 2 * (n1 + base.s2.length), off = 2 * n1;
+  const HTre = new Float64Array(dim * dim), HTim = new Float64Array(dim * dim);
+  const pon = (r, c, re, im) => {                   // z and its Hermitian conjugate
+    HTre[r * dim + c] = re; HTim[r * dim + c] = im;
+    HTre[c * dim + r] = re; HTim[c * dim + r] = -im;
+  };
+  const despl = [[0, 0], [1, 0], [0, 1]];
+  for (let i = 0; i < n1; i++) {
+    const [m, n] = base.s1[i];
+    for (let j = 0; j < 3; j++) {
+      const k = (m + despl[j][0]) + "," + (n + despl[j][1]);
+      if (!base.idx2.has(k)) continue;
+      const r = off + 2 * base.idx2.get(k), c = 2 * i;
+      const cj = Math.cos(j * PHI), sj = Math.sin(j * PHI);
+      pon(r, c, wAA, 0);                            // T_j = wAA σ0 + wAB(...)
+      pon(r, c + 1, WAB * cj, -WAB * sj);
+      pon(r + 1, c, WAB * cj, WAB * sj);
+      pon(r + 1, c + 1, wAA, 0);
+    }
+  }
+  const N2 = 2 * dim;
+  return { nsh, geo, base, dim, off, HTre, HTim,
+    Hre: new Float64Array(dim * dim), Him: new Float64Array(dim * dim),
+    Mre: new Float64Array(N2 * N2),
+    d: new Float64Array(N2), e: new Float64Array(N2) };
+}
+
+/* Eigenvalues of H(k): Dirac cones rotated by ∓θ/2 on the diagonal + tunneling.
+   The Hermitian matrix H = A+iB is embedded in the real symmetric [[A,-B],[B,A]]
+   (doubled eigenvalues) and solved with Householder + implicit QL. */
+function espectroK(mod, kx, ky) {
+  const { geo, base, dim, off, HTre, HTim, Hre, Him, Mre, d, e } = mod;
+  const { thetaDeg, qs, b1, b2 } = geo;
+  Hre.set(HTre); Him.set(HTim);
+  const th = thetaDeg * Math.PI / 180;
+  const dirac = (px, py, a, r) => {                 // h(p,α) = -ħv_F (R(-α)p)·σ
+    const ca = Math.cos(a), sa = Math.sin(a);
+    const rx = ca * px + sa * py, ry = -sa * px + ca * py;
+    const i01 = r * dim + r + 1, i10 = (r + 1) * dim + r;
+    Hre[i01] = -HBARVF * rx; Him[i01] = HBARVF * ry;
+    Hre[i10] = -HBARVF * rx; Him[i10] = -HBARVF * ry;
+  };
+  for (let i = 0; i < base.s1.length; i++) {        // layer 1: α = -θ/2
+    const [m, n] = base.s1[i];
+    dirac(kx + m * b1[0] + n * b2[0], ky + m * b1[1] + n * b2[1], -th / 2, 2 * i);
+  }
+  for (let i = 0; i < base.s2.length; i++) {        // layer 2: α = +θ/2
+    const [m, n] = base.s2[i];
+    dirac(kx + m * b1[0] + n * b2[0] + qs[0][0],
+          ky + m * b1[1] + n * b2[1] + qs[0][1], th / 2, off + 2 * i);
+  }
+  const N2 = 2 * dim;
+  for (let i = 0; i < dim; i++) for (let j = 0; j < dim; j++) {
+    const a = Hre[i * dim + j], b = Him[i * dim + j];
+    Mre[i * N2 + j] = a; Mre[i * N2 + j + dim] = -b;
+    Mre[(i + dim) * N2 + j] = b; Mre[(i + dim) * N2 + j + dim] = a;
+  }
+  eighReal(Mre, N2, d, e);
+  const v = Array.from(d).sort((x, y) => x - y);
+  const out = new Float64Array(dim);
+  for (let i = 0; i < dim; i++) out[i] = .5 * (v[2 * i] + v[2 * i + 1]);
+  return out;
+}
+
+/* Real symmetric solver (eigenvalues only): Householder reduction to
+   tridiagonal form + QL algorithm with implicit shifts. */
+function eighReal(a, n, d, e) {
+  for (let i = n - 1; i >= 1; i--) {
+    const l = i - 1; let h = 0, scale = 0;
+    if (l > 0) {
+      for (let k = 0; k <= l; k++) scale += Math.abs(a[i * n + k]);
+      if (scale === 0) e[i] = a[i * n + l];
+      else {
+        for (let k = 0; k <= l; k++) { a[i * n + k] /= scale; h += a[i * n + k] * a[i * n + k]; }
+        let f = a[i * n + l], g = f >= 0 ? -Math.sqrt(h) : Math.sqrt(h);
+        e[i] = scale * g; h -= f * g; a[i * n + l] = f - g; f = 0;
+        for (let j = 0; j <= l; j++) {
+          g = 0;
+          for (let k = 0; k <= j; k++) g += a[j * n + k] * a[i * n + k];
+          for (let k = j + 1; k <= l; k++) g += a[k * n + j] * a[i * n + k];
+          e[j] = g / h; f += e[j] * a[i * n + j];
+        }
+        const hh = f / (h + h);
+        for (let j = 0; j <= l; j++) {
+          f = a[i * n + j];
+          const gj = (e[j] -= hh * f);
+          for (let k = 0; k <= j; k++) a[j * n + k] -= f * e[k] + gj * a[i * n + k];
+        }
+      }
+    } else e[i] = a[i * n + l];
+  }
+  e[0] = 0;
+  for (let i = 0; i < n; i++) d[i] = a[i * n + i];
+  for (let i = 1; i < n; i++) e[i - 1] = e[i];
+  e[n - 1] = 0;
+  for (let l = 0; l < n; l++) {
+    let iter = 0, m;
+    do {
+      for (m = l; m < n - 1; m++) {
+        const dd = Math.abs(d[m]) + Math.abs(d[m + 1]);
+        if (Math.abs(e[m]) <= Number.EPSILON * dd + 1e-300) break;
+      }
+      if (m !== l) {
+        if (iter++ === 80) break;
+        let g = (d[l + 1] - d[l]) / (2 * e[l]), r = Math.hypot(g, 1);
+        g = d[m] - d[l] + e[l] / (g + (g >= 0 ? Math.abs(r) : -Math.abs(r)));
+        let s = 1, c = 1, p = 0, i;
+        for (i = m - 1; i >= l; i--) {
+          let f = s * e[i]; const b = c * e[i];
+          r = Math.hypot(f, g); e[i + 1] = r;
+          if (r === 0) { d[i + 1] -= p; e[m] = 0; break; }
+          s = f / r; c = g / r; g = d[i + 1] - p;
+          r = (d[i] - g) * s + 2 * c * b; p = s * r;
+          d[i + 1] = g + p; g = c * r - b;
+        }
+        if (r === 0 && i >= l) continue;
+        d[l] -= p; e[l] = g; e[m] = 0;
+      }
+    } while (m !== l);
+  }
+}
+
+/* Path Γ→K→M→K′→Γ of the mini-BZ (K=(0,0), K′=(0,kθ), M=(0,kθ/2), Γ=(√3/2,½)kθ) */
+function caminoK(kt, ppk) {
+  const nod = [[Math.sqrt(3) / 2 * kt, .5 * kt], [0, 0], [0, .5 * kt], [0, kt],
+               [Math.sqrt(3) / 2 * kt, .5 * kt]];
+  const etq = ["Γ", "K", "M", "K′", "Γ"];
+  const ks = [], dist = [], ticks = [0];
+  let dAc = 0;
+  for (let s = 0; s < 4; s++) {
+    const a = nod[s], b = nod[s + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const np = Math.max(4, Math.round(ppk * L / kt));
+    for (let t = 0; t < np; t++) {
+      ks.push([a[0] + t / np * (b[0] - a[0]), a[1] + t / np * (b[1] - a[1])]);
+      dist.push(dAc + t / np * L);
+    }
+    dAc += L; ticks.push(dAc);
+  }
+  ks.push(nod[4]); dist.push(dAc);
+  return { ks, dist, ticks, etq };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   APPLICATION BLOCK — state, asynchronous computation and drawing
+   ═══════════════════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const modelos = {};                                  // cache by (N_sh, relaxation)
+function relajada() { return $("selRelax").value === "rel"; }
+function modelo(nsh, theta) {
+  const clave = nsh + (relajada() ? ":rel" : ":rig");
+  if (!modelos[clave]) modelos[clave] = crearModelo(nsh, relajada() ? WAA : WAB);
+  modelos[clave].geo = geometria(theta);             // the basis does not depend on θ
+  return modelos[clave];
+}
+let gen = 0;                                         // cancellation token
+const tick = () => new Promise(r => setTimeout(r, 0));
+let ultimoBandas = null, ultimoBarrido = null, ultimoDos = null;
+
+function leerTheta() { return thetaDePos(parseFloat($("sliTheta").value)); }
+function leerN() { return parseInt($("selN").value, 10); }
+
+/* Slider scale: piecewise logarithmic with θ* = 1.085° exactly at the
+   center. Left half: log between 0.5° and 1.085° (maximum resolution in the
+   magic-angle region); right half: log between 1.085° and 5°. */
+const TH_MIN = 0.5, TH_MAX = 5.0, TH_PIV = 1.085;
+function thetaDePos(p) {                             // p ∈ [0, 1000] → θ [°]
+  const t = p / 1000;
+  return t <= .5
+    ? TH_MIN * Math.pow(TH_PIV / TH_MIN, t / .5)
+    : TH_PIV * Math.pow(TH_MAX / TH_PIV, (t - .5) / .5);
+}
+function posDeTheta(th) {                            // θ [°] → p ∈ [0, 1000]
+  th = Math.min(TH_MAX, Math.max(TH_MIN, th));
+  return th <= TH_PIV
+    ? 500 * Math.log(th / TH_MIN) / Math.log(TH_PIV / TH_MIN)
+    : 500 + 500 * Math.log(th / TH_PIV) / Math.log(TH_MAX / TH_PIV);
+}
+
+/* ── Band computation along the path ──────────────────────────────────────── */
+async function calcularBandas(nsh, theta, ppk, miGen, progresivo) {
+  const mod = modelo(nsh, theta);
+  const cam = caminoK(mod.geo.kt, ppk);
+  const nb = mod.dim / 2;
+  const E = [];
+  for (let i = 0; i < cam.ks.length; i++) {
+    E.push(espectroK(mod, cam.ks[i][0], cam.ks[i][1]));
+    if (i % 6 === 5) {
+      if (progresivo) dibujarBandas({ cam, E, nb, theta, nsh, parcial: cam.ks.length });
+      await tick();
+      if (miGen !== gen) return null;
+    }
+  }
+  let up = -1e9, dn = 1e9;
+  for (const fila of E) { up = Math.max(up, fila[nb]); dn = Math.min(dn, fila[nb - 1]); }
+  // v*: cone splitting at K+δk (insensitive to the global e–h offset)
+  const dk = 1e-3 * mod.geo.kt;
+  const Ek = espectroK(mod, dk * Math.sqrt(3) / 2, dk * .5);
+  const v = (Ek[nb] - Ek[nb - 1]) / (2 * HBARVF * dk);
+  return { cam, E, nb, theta, nsh, W: (up - dn) * 1e3, v, centro: .5 * (up + dn) * 1e3 };
+}
+
+/* ── Drawing the band diagram ─────────────────────────────────────────────── */
+function dibujarBandas(res) {
+  const cv = $("cvBandas"), ctx = prepara(cv);
+  const Wpx = cv.clientWidth, Hpx = cv.clientHeight;
+  const m = { i: 46, d: 12, a: 14, b: 26 };
+  const zoom = $("chkZoom").checked && res.W !== undefined;
+  /* default range proportional to the moiré scale ħv_F·k_θ: ±261 meV at
+     θ = 1.085° (as before), ±~1.2 eV at θ = 5°, ±~120 meV at θ = 0.5° */
+  const ktRes = 2 * K_DIRAC * Math.sin(res.theta * Math.PI / 360);
+  let yMax = 1.55 * HBARVF * ktRes * 1e3, yMin = -yMax;
+  if (zoom) {
+    const semi = Math.max(6, .85 * res.W);
+    yMin = res.centro - semi; yMax = res.centro + semi;
+  }
+  const dTot = res.cam.dist[res.cam.dist.length - 1];
+  const X = d => m.i + (Wpx - m.i - m.d) * d / dTot;
+  const Y = e => m.a + (Hpx - m.a - m.b) * (yMax - e) / (yMax - yMin);
+
+  ejesY(ctx, X, Y, yMin, yMax, m, Wpx, Hpx, "E  [meV]");
+  ctx.strokeStyle = "#3a3f4d"; ctx.fillStyle = "#9a9eab";
+  ctx.font = "12px " + getComputedStyle(document.body).getPropertyValue("--mono");
+  ctx.textAlign = "center";
+  res.cam.ticks.forEach((t, i) => {
+    const x = X(t);
+    ctx.beginPath(); ctx.moveTo(x, m.a); ctx.lineTo(x, Hpx - m.b); ctx.stroke();
+    ctx.fillText(res.cam.etq[i], x, Hpx - 8);
+  });
+  linea0(ctx, X, Y, dTot);
+
+  const nPts = res.E.length, dim = res.E[0].length, nb = res.nb;
+  for (let b = 0; b < dim; b++) {
+    let visible = false;
+    for (let i = 0; i < nPts; i++) {
+      const e = res.E[i][b] * 1e3;
+      if (e > yMin - 30 && e < yMax + 30) { visible = true; break; }
+    }
+    if (!visible) continue;
+    const central = (b === nb - 1 || b === nb);
+    ctx.strokeStyle = central ? "#ff7a55" : "#7d96b4";
+    ctx.lineWidth = central ? 2.2 : 1.1;
+    ctx.globalAlpha = central ? 1 : .75;
+    ctx.beginPath();
+    for (let i = 0; i < nPts; i++) {
+      const x = X(res.cam.dist[i]), y = Y(res.E[i][b] * 1e3);
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  if (res.parcial && res.E.length < res.parcial) {
+    ctx.fillStyle = "#6d717e"; ctx.textAlign = "right";
+    ctx.fillText("computing…", Wpx - 16, m.a + 14);
+  }
+}
+
+/* ── Angle sweep: W(θ) and location of θ* ─────────────────────────────────── */
+async function barrido() {
+  const miGen = ++gen;
+  $("btnBarrido").disabled = true;
+  const ths = [], Ws = [];
+  const Wde = (nsh, th) => {
+    const mod = modelo(nsh, th), nb = mod.dim / 2, cam = caminoK(mod.geo.kt, 5);
+    let up = -1e9, dn = 1e9;
+    for (const k of cam.ks) {
+      const E = espectroK(mod, k[0], k[1]);
+      up = Math.max(up, E[nb]); dn = Math.min(dn, E[nb - 1]);
+    }
+    return (up - dn) * 1e3;
+  };
+  for (let th = .70; th <= 1.601; th += .02) {       // stage 1: N_sh = 2
+    ths.push(th); Ws.push(Wde(2, th));
+    estado(`Sweep N_sh=2 · ${Math.round(100 * (th - .7) / .9)} %`);
+    ultimoBarrido = { ths: ths.slice(), Ws: Ws.slice() };
+    dibujarBarrido(ultimoBarrido);
+    await tick(); if (miGen !== gen) { $("btnBarrido").disabled = false; return; }
+  }
+  const thc = ths[Ws.indexOf(Math.min(...Ws))];
+  const thsF = [], WsF = [];                          // stage 2: refine N_sh = 3
+  for (let th = thc - .05; th <= thc + .0501; th += .01) {
+    thsF.push(th); WsF.push(Wde(3, th));
+    estado(`Refining with N_sh=3 · θ = ${th.toFixed(2)}°`);
+    ultimoBarrido = { ths, Ws, thsF: thsF.slice(), WsF: WsF.slice() };
+    dibujarBarrido(ultimoBarrido);
+    await tick(); if (miGen !== gen) { $("btnBarrido").disabled = false; return; }
+  }
+  const i0 = WsF.indexOf(Math.min(...WsF));           // parabolic refinement
+  let thStar = thsF[i0];
+  if (i0 > 0 && i0 < WsF.length - 1) {
+    const den = WsF[i0 - 1] - 2 * WsF[i0] + WsF[i0 + 1];
+    if (den > 0) thStar += .01 * .5 * (WsF[i0 - 1] - WsF[i0 + 1]) / den;
+  }
+  ultimoBarrido = { ths, Ws, thsF, WsF, thStar };
+  dibujarBarrido(ultimoBarrido);
+  $("txtBarrido").innerHTML =
+    `Minimum of W at <b>θ* ≈ ${thStar.toFixed(3)}°</b> (refined with N_sh = 3) — ` +
+    `within the expected window 1.05–1.10°. Click the ▲ marker on the slider to jump to θ*.`;
+  colocarMarcaMagica(thStar);
+  estado("Sweep complete");
+  $("btnBarrido").disabled = false;
+}
+
+function dibujarBarrido(b) {
+  const cv = $("cvBarrido"), ctx = prepara(cv);
+  const Wpx = cv.clientWidth, Hpx = cv.clientHeight, m = { i: 46, d: 10, a: 12, b: 30 };
+  const todos = b.Ws.concat(b.WsF || []);
+  const lo = Math.max(.3, Math.min(...todos) * .7), hi = Math.max(...todos) * 1.4;
+  const X = t => m.i + (Wpx - m.i - m.d) * (t - .70) / .90;
+  const Y = w => m.a + (Hpx - m.a - m.b) * (Math.log10(hi) - Math.log10(w)) /
+                 (Math.log10(hi) - Math.log10(lo));
+  ctx.strokeStyle = "#3a3f4d"; ctx.fillStyle = "#9a9eab";
+  ctx.font = "11px " + getComputedStyle(document.body).getPropertyValue("--mono");
+  for (const dec of [1, 10, 100]) if (dec >= lo && dec <= hi) {
+    ctx.globalAlpha = .5; ctx.beginPath();
+    ctx.moveTo(m.i, Y(dec)); ctx.lineTo(Wpx - m.d, Y(dec)); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.textAlign = "right";
+    ctx.fillText(dec + " meV", m.i - 5, Y(dec) + 4);
+  }
+  ctx.textAlign = "center";
+  for (const t of [.8, 1.0, 1.2, 1.4, 1.6]) ctx.fillText(t.toFixed(1) + "°", X(t), Hpx - 9);
+  if (b.thStar !== undefined) {
+    ctx.strokeStyle = "#ff7a55"; ctx.setLineDash([4, 4]); ctx.beginPath();
+    ctx.moveTo(X(b.thStar), m.a); ctx.lineTo(X(b.thStar), Hpx - m.b); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = "#ff7a55"; ctx.textAlign = "left";
+    ctx.fillText("θ* = " + b.thStar.toFixed(3) + "°", X(b.thStar) + 6, m.a + 12);
+  }
+  trazo(ctx, b.ths.map(X), b.Ws.map(Y), "#7d96b4", 1.4, 2.4);
+  if (b.thsF) trazo(ctx, b.thsF.map(X), b.WsF.map(Y), "#ff7a55", 1.8, 3.0);
+}
+
+/* ── DOS over a mini-BZ grid ──────────────────────────────────────────────── */
+async function calcularDos() {
+  const miGen = ++gen;
+  $("btnDos").disabled = true;
+  const theta = leerTheta(), nsh = Math.min(leerN(), 3);
+  const malla = nsh >= 3 ? 10 : 15;
+  const mod = modelo(nsh, theta), { b1, b2 } = mod.geo;
+  /* adaptive window: ±80 meV near the magic angle, up to ±~0.8·ħv_F·k_θ
+     at large angles to span the full central bands */
+  const VENT = Math.max(.080, .80 * HBARVF * mod.geo.kt), vals = [];
+  for (let i = 0; i < malla; i++) {
+    for (let j = 0; j < malla; j++) {
+      const f1 = (i + .5) / malla, f2 = (j + .5) / malla;
+      const E = espectroK(mod, f1 * b1[0] + f2 * b2[0], f1 * b1[1] + f2 * b2[1]);
+      for (const x of E) if (Math.abs(x) < VENT + .01) vals.push(x);
+    }
+    estado(`DOS · ${Math.round(100 * (i + 1) / malla)} %`);
+    await tick(); if (miGen !== gen) { $("btnDos").disabled = false; return; }
+  }
+  const Wb = ultimoBandas ? ultimoBandas.W : 5;
+  // adaptive smoothing: follows the bandwidth near θ*, and the window
+  // (with the finite grid) when it grows at large angles
+  const sig = Math.min(14, Math.max(1.2, Wb / 5, VENT * 1e3 / 55)) * 1e-3;
+  const nE = 481, eje = [], rho = [];
+  for (let i = 0; i < nE; i++) {
+    const E = -VENT + 2 * VENT * i / (nE - 1);
+    let s = 0;
+    for (const x of vals) { const u = (E - x) / sig; if (Math.abs(u) < 6) s += Math.exp(-.5 * u * u); }
+    eje.push(E * 1e3); rho.push(s / (Math.sqrt(2 * Math.PI) * sig * malla * malla));
+  }
+  ultimoDos = { eje, rho, theta, nsh, malla, sig, vent: VENT * 1e3 };
+  dibujarDos(ultimoDos);
+  $("txtDos").innerHTML = `DOS at <b>θ = ${theta.toFixed(3)}°</b> · ${malla}×${malla} grid · ` +
+    `σ = ${(sig * 1e3).toFixed(1)} meV · N_sh = ${nsh} · states/(eV·moiré cell), one valley and one spin.`;
+  estado("DOS complete");
+  $("btnDos").disabled = false;
+}
+
+function dibujarDos(d) {
+  const cv = $("cvDos"), ctx = prepara(cv);
+  const Wpx = cv.clientWidth, Hpx = cv.clientHeight, m = { i: 46, d: 10, a: 12, b: 30 };
+  const hi = Math.max(...d.rho) * 1.08;
+  const V = d.vent || 80;                            // half-width of the window [meV]
+  const X = e => m.i + (Wpx - m.i - m.d) * (e + V) / (2 * V);
+  const Y = r => m.a + (Hpx - m.a - m.b) * (1 - r / hi);
+  ctx.strokeStyle = "#3a3f4d"; ctx.fillStyle = "#9a9eab";
+  ctx.font = "11px " + getComputedStyle(document.body).getPropertyValue("--mono");
+  ctx.textAlign = "center";
+  const tV = pasoBonito(V / 2.2);                    // ticks: 0, ±tV, ±2tV
+  for (const t of [-2 * tV, -tV, 0, tV, 2 * tV]) {
+    if (Math.abs(t) > V) continue;
+    ctx.globalAlpha = t === 0 ? .9 : .45; ctx.beginPath();
+    ctx.moveTo(X(t), m.a); ctx.lineTo(X(t), Hpx - m.b); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillText(formatea(t) + " meV", X(t), Hpx - 9);
+  }
+  ctx.save(); ctx.translate(13, (m.a + Hpx - m.b) / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText("DOS", 0, 0); ctx.restore();
+  ctx.strokeStyle = "#ff7a55"; ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  d.eje.forEach((e, i) => { const x = X(e), y = Y(d.rho[i]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+  ctx.globalAlpha = .14; ctx.fillStyle = "#ff7a55";
+  ctx.lineTo(X(d.eje[d.eje.length - 1]), Y(0)); ctx.lineTo(X(d.eje[0]), Y(0));
+  ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+}
+
+/* ── Moiré pattern in the strip (visual signature, to scale) ──────────────
+   Two HONEYCOMB lattices like graphene: triangular Bravais lattice with a
+   two-atom basis, A at R = i·a1 + j·a2 and B at R + (a1+a2)/3, joined by
+   the three bonds B→{A(R), A(R+a1), A(R+a2)} of length a/√3. Each layer is
+   rotated by ∓θ/2 about an AA stacking point (canvas center). The
+   drawing respects scale: λ_moiré = a/(2·sin(θ/2)), so the
+   supercell grows as θ decreases exactly as in the material.                */
+let moireTheta = 1.085, moirePedido = false;
+function solicitarMoire(theta) {                     // redraw limited to 1/frame
+  moireTheta = theta;
+  if (!$("chkMoire").checked) return;                // strip disabled: zero cost
+  if (moirePedido) return;
+  moirePedido = true;
+  requestAnimationFrame(() => { moirePedido = false; dibujarMoire(moireTheta); });
+}
+function dibujarMoire(theta) {
+  const cv = $("moire"), ctx = prepara(cv);
+  const W = cv.clientWidth, H = cv.clientHeight, cx = W / 2, cy = H / 2;
+  const a = 7;                                       // drawn lattice constant [px]
+  const a1 = [a, 0], a2 = [a * .5, a * Math.sqrt(3) / 2];
+  const dB = [(a1[0] + a2[0]) / 3, (a1[1] + a2[1]) / 3];   // position of atom B
+  const th = theta * Math.PI / 180;
+  const mg = 2 * a + .01 * Math.max(W, H);           // margin (covers the rotation)
+  /* Relaxation (qualitative, 1st harmonic): u±(r) = ±u₀ Σ_j b̂_j sin(b_j·δ(r)),
+     with δ(r) = θ ẑ×r the local stacking shift and b_j the three
+     atomic reciprocal vectors of the first star. Near AA the field
+     is an extra rotation ±(η/2)·θ ẑ×r: the local twist becomes θ_loc = (1+η)θ, with
+     η = 0.605/θ²[°] calibrated to the known value ×1.5 at θ ≈ 1.1°. Thus the
+     AA regions contract and the triangular AB/BA domains grow. */
+  const eta = relajada() ? Math.min(.605 / (theta * theta), 2.2) : 0;
+  const bMod = 4 * Math.PI / (Math.sqrt(3) * a);     // |b_j| atomic [px⁻¹]
+  const u0 = eta / (3 * bMod);                       // amplitude per harmonic [px]
+  const bAt = [                                      // [b_x, b_y, b̂_x, b̂_y]
+    [2 * Math.PI / a, -2 * Math.PI / (a * Math.sqrt(3)), Math.sqrt(3) / 2, -.5],
+    [0, 4 * Math.PI / (a * Math.sqrt(3)), 0, 1],
+    [-2 * Math.PI / a, -2 * Math.PI / (a * Math.sqrt(3)), -Math.sqrt(3) / 2, -.5]];
+  const capa = (ang, color, s) => {                  // s = ±1: sign of u in the layer
+    const ca = Math.cos(ang), sa = Math.sin(ang);
+    const enlaces = new Path2D(), atomos = new Path2D();
+    const punto = (x, y) => {
+      let px = ca * x - sa * y, py = sa * x + ca * y;
+      if (eta > 0) {
+        const dx = -th * py, dy = th * px;           // δ(r) = θ ẑ×r
+        let ux = 0, uy = 0;
+        for (const b of bAt) {
+          const f = Math.sin(b[0] * dx + b[1] * dy);
+          ux += b[2] * f; uy += b[3] * f;
+        }
+        px += s * u0 * ux; py += s * u0 * uy;
+      }
+      return [cx + px, cy + py];
+    };
+    const jMax = Math.ceil((H / 2 + mg) / a2[1]);
+    for (let j = -jMax; j <= jMax; j++) {
+      const iMin = Math.floor((-W / 2 - mg - j * a2[0]) / a);
+      const iMax = Math.ceil((W / 2 + mg - j * a2[0]) / a);
+      for (let i = iMin; i <= iMax; i++) {
+        const xA = i * a1[0] + j * a2[0], yA = j * a2[1];
+        const xB = xA + dB[0], yB = yA + dB[1];
+        const B = punto(xB, yB);
+        for (const v of [[xA, yA], [xA + a1[0], yA + a1[1]], [xA + a2[0], yA + a2[1]]]) {
+          const A = punto(v[0], v[1]);
+          enlaces.moveTo(A[0], A[1]); enlaces.lineTo(B[0], B[1]);
+        }
+        const A0 = punto(xA, yA);
+        atomos.moveTo(A0[0] + 1.1, A0[1]); atomos.arc(A0[0], A0[1], 1.1, 0, 6.2832);
+        atomos.moveTo(B[0] + 1.1, B[1]);   atomos.arc(B[0], B[1], 1.1, 0, 6.2832);
+      }
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = .7; ctx.globalAlpha = .5; ctx.stroke(enlaces);
+    ctx.fillStyle = color;   ctx.globalAlpha = .85; ctx.fill(atomos);
+    ctx.globalAlpha = 1;
+  };
+  capa(-th / 2, "#8fb6d9", -1);                      // layer 1: twist -θ/2, u⁻
+  capa(+th / 2, "#ff8a63", +1);                      // layer 2: twist +θ/2, u⁺
+  /* scale bar + relaxation mode */
+  const lamPx = a / (2 * Math.sin(th / 2));
+  const lamNm = A_CC / (2 * Math.sin(th / 2));
+  ctx.font = "11px " + getComputedStyle(document.body).getPropertyValue("--mono");
+  const x0 = 18, y0 = H - 16;
+  const cabe = lamPx <= W - 2 * x0;
+  const lin1 = eta > 0
+    ? `relaxed lattice · local twist at AA: θ_loc ≈ (1+η)·θ = ${((1 + eta) * theta).toFixed(2)}°  (η = ${eta.toFixed(2)})`
+    : `rigid lattice · uniform local twist θ_loc = θ across the plane`;
+  const lin2 = cabe
+    ? `λ_moiré = a/(2·sin θ/2)  ·  ${lamNm.toFixed(1)} nm real`
+    : `λ_moiré ≈ ${lamNm.toFixed(1)} nm — one period exceeds the visible width (small θ)`;
+  const tw = Math.max(ctx.measureText(lin1).width, ctx.measureText(lin2).width);
+  ctx.fillStyle = "rgba(18,19,25,.78)";
+  ctx.fillRect(x0 - 7, y0 - 39, Math.max(tw, cabe ? lamPx : 0) + 14, cabe ? 49 : 38);
+  ctx.fillStyle = "#ece9e1"; ctx.strokeStyle = "#ece9e1"; ctx.globalAlpha = .9;
+  if (cabe) {
+    ctx.lineWidth = 1.2; ctx.beginPath();
+    ctx.moveTo(x0, y0); ctx.lineTo(x0 + lamPx, y0);
+    ctx.moveTo(x0, y0 - 5); ctx.lineTo(x0, y0 + 5);
+    ctx.moveTo(x0 + lamPx, y0 - 5); ctx.lineTo(x0 + lamPx, y0 + 5);
+    ctx.stroke();
+  }
+  ctx.textAlign = "left";
+  ctx.fillText(lin1, x0, y0 - 24);
+  ctx.fillText(lin2, x0, y0 - 9);
+  ctx.globalAlpha = 1;
+}
+
+/* ── Drawing utilities ────────────────────────────────────────────────────── */
+function prepara(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  }
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return ctx;
+}
+function ejesY(ctx, X, Y, yMin, yMax, m, Wpx, Hpx, etiqueta) {
+  ctx.strokeStyle = "#3a3f4d"; ctx.fillStyle = "#9a9eab";
+  ctx.font = "11px " + getComputedStyle(document.body).getPropertyValue("--mono");
+  const paso = pasoBonito((yMax - yMin) / 6);
+  ctx.textAlign = "right";
+  for (let v = Math.ceil(yMin / paso) * paso; v <= yMax; v += paso) {
+    ctx.globalAlpha = .4; ctx.beginPath();
+    ctx.moveTo(m.i, Y(v)); ctx.lineTo(Wpx - m.d, Y(v)); ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillText(formatea(v), m.i - 6, Y(v) + 4);
+  }
+  ctx.save(); ctx.translate(12, (m.a + Hpx - m.b) / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center"; ctx.fillText(etiqueta, 0, 0); ctx.restore();
+}
+function linea0(ctx, X, Y, dTot) {
+  ctx.strokeStyle = "#9a9eab"; ctx.globalAlpha = .5; ctx.setLineDash([3, 5]);
+  ctx.beginPath(); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(dTot), Y(0)); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+}
+function trazo(ctx, xs, ys, color, lw, r) {
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = lw;
+  ctx.beginPath(); xs.forEach((x, i) => i ? ctx.lineTo(x, ys[i]) : ctx.moveTo(x, ys[i]));
+  ctx.stroke();
+  for (let i = 0; i < xs.length; i++) {
+    ctx.beginPath(); ctx.arc(xs[i], ys[i], r, 0, 6.2832); ctx.fill();
+  }
+}
+function pasoBonito(x) {
+  const p = Math.pow(10, Math.floor(Math.log10(x)));
+  for (const f of [1, 2, 5, 10]) if (f * p >= x) return f * p;
+  return 10 * p;
+}
+function formatea(v) { return Math.abs(v) < 1e-9 ? "0" : (Math.round(v * 100) / 100).toString(); }
+function estado(s) { $("estado").textContent = s; }
+
+/* ── Orchestration: preview while dragging + fine compute on release ──────── */
+let tmrFino = null, previsualizando = false;
+async function alCambiarTheta() {
+  const theta = leerTheta();
+  $("numTheta").textContent = theta.toFixed(3);
+  actualizarLecturas(theta, null);
+  solicitarMoire(theta);
+  if (!previsualizando) {                            // N_sh = 2 preview
+    previsualizando = true;
+    const miGen = ++gen;
+    const res = await calcularBandas(2, theta, 9, miGen, false);
+    previsualizando = false;
+    if (res && miGen === gen) { ultimoBandas = res; dibujarBandas(res); actualizarLecturas(theta, res); }
+  }
+  clearTimeout(tmrFino);
+  tmrFino = setTimeout(calculoFino, 320);            // full quality when idle
+}
+async function calculoFino() {
+  const theta = leerTheta(), nsh = leerN();
+  const miGen = ++gen;
+  estado(`Computing bands · N_sh = ${nsh} (dim ${modelo(nsh, theta).dim})…`);
+  $("etqCalidad").textContent = "N_sh = " + nsh;
+  const t0 = performance.now();
+  const res = await calcularBandas(nsh, theta, 16, miGen, true);
+  if (!res || miGen !== gen) return;
+  ultimoBandas = res;
+  dibujarBandas(res);
+  actualizarLecturas(theta, res);
+  const aviso = (theta < 0.7 && nsh < 4)
+    ? "  ·  for θ < 0.7° (α > 0.9), N_sh = 4 is recommended" : "";
+  estado(`Ready · ${((performance.now() - t0) / 1000).toFixed(1)} s${aviso}`);
+}
+function actualizarLecturas(theta, res) {
+  const th = theta * Math.PI / 180, kt = 2 * K_DIRAC * Math.sin(th / 2);
+  $("rLam").textContent = (A_CC / (2 * Math.sin(th / 2))).toFixed(1) + " nm";
+  $("rKt").textContent = kt.toFixed(4) + " nm⁻¹";
+  $("rAlpha").textContent = (WAB / (HBARVF * kt)).toFixed(3);
+  if (res) {
+    $("rW").textContent = res.W.toFixed(2) + " meV";
+    $("rV").textContent = res.v.toFixed(3);
+  }
+}
+function colocarMarcaMagica(thStar) {
+  const sli = $("sliTheta"), mk = $("marcaMagica");
+  const f = posDeTheta(thStar) / 1000;               // fraction on the log scale
+  mk.style.left = `calc(${(100 * f).toFixed(2)}% )`;
+  mk.style.display = "block";
+  mk.style.cursor = "pointer"; mk.style.pointerEvents = "auto";
+  mk.onclick = () => { sli.value = Math.round(posDeTheta(thStar)); alCambiarTheta(); };
+  mk.title = "Jump to θ* = " + thStar.toFixed(3) + "°";
+}
+
+/* ── Startup ──────────────────────────────────────────────────────────────── */
+$("sliTheta").addEventListener("input", alCambiarTheta);
+$("selN").addEventListener("change", () => { clearTimeout(tmrFino); calculoFino(); });
+$("selRelax").addEventListener("change", () => {
+  clearTimeout(tmrFino);
+  solicitarMoire(leerTheta());                       // the pattern changes mode
+  if (ultimoBarrido && ultimoBarrido.thStar !== undefined)
+    $("txtBarrido").innerHTML += " <b>· mode changed: re-run the sweep</b>";
+  if (ultimoDos)
+    $("txtDos").innerHTML += " <b>· mode changed: recompute the DOS</b>";
+  calculoFino();
+});
+$("chkZoom").addEventListener("change", () => { if (ultimoBandas) dibujarBandas(ultimoBandas); });
+$("chkMoire").addEventListener("change", () => {
+  const visible = $("chkMoire").checked;
+  $("seccionMoire").style.display = visible ? "" : "none";
+  if (visible) solicitarMoire(leerTheta());          // redraw with the current θ and mode
+});
+$("btnBarrido").addEventListener("click", barrido);
+$("btnDos").addEventListener("click", calcularDos);
+window.addEventListener("resize", () => {
+  if (ultimoBandas) dibujarBandas(ultimoBandas);
+  if (ultimoBarrido) dibujarBarrido(ultimoBarrido);
+  if (ultimoDos) dibujarDos(ultimoDos);
+  solicitarMoire(leerTheta());
+});
+colocarMarcaMagica(1.085);                           // reference value (Python)
+solicitarMoire(leerTheta());
+calculoFino();
+</script>
+</body>
+</html>
