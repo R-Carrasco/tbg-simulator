@@ -49,6 +49,8 @@ centre that grid extends. You can pick N_sh = 2, 3, or 4; higher keeps more
 plane waves, which is more accurate but slower, and only really matters at the
 smallest angles.
 
+![Convergence of the flat-band width W with the cutoff radius N_sh: W stabilises from N_sh = 3 onward, and the truncation error falls below 0.1 meV](fig4_convergence.png)
+
 Finding the energy bands means finding the eigenvalues of the Hamiltonian
 matrix H. Because its entries are complex numbers, H is Hermitian, which 
 guarantees the eigenvalues (the energies) come out real. Rather than handle 
@@ -60,9 +62,9 @@ tridiagonal form, then the implicit-QL algorithm that reads the eigenvalues
 off it. The result is a fast, robust solver that needs no external libraries 
 and runs comfortably in the browser.
 
-The complex Hermitian eigenproblem is solved by embedding H = A + iB in the real
-symmetric matrix [[A, −B], [B, A]] and running a Householder reduction followed
-by implicit-QL.
+![Band structure along Γ→K→M→K′→Γ at a large angle versus the magic angle, with the flat bands highlighted](fig1_bands.png)
+
+![Density of states as θ approaches the magic angle: the van Hove singularities collapse into a single sharp peak at E ≈ 0](fig3_dos.png)
 
 ## How much to trust it
 
@@ -71,6 +73,8 @@ Two checks I cared about:
 - The eigensolver agrees with SciPy to within < 10⁻¹⁴ eV.
 - With the relaxed parameters, the W(θ) minimum sits at θ\* ≈ 1.085°, comfortably
   inside the expected 1.05°–1.10° window.
+
+![W(θ) sweep: the combined width of the two central bands drops to a sharp minimum at θ* ≈ 1.085°, inside the expected window](fig2_sweep_theta.png)
 
 That said, it's a continuum BM model and should be read as one. It captures the
 flat-band physics around the first magic angle, but there's no lattice-scale
@@ -92,7 +96,8 @@ On GitHub Pages the file is served as `index.html` at the repo root.
 
 The reference Python script is the canonical version the web solver was checked
 against; run it if you want the ground-truth numbers or a starting point for
-your own modifications.
+your own modifications. It also writes out the four figures
+(`fig1_bands.png` … `fig4_convergence.png`) into the folder you run it from.
 
 ## A note on how it was built
 

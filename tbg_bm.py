@@ -21,10 +21,10 @@
  "Relaxed" parameters (lattice corrugation): w_AA = 79.7 meV < w_AB = 97.5 meV.
 
  Outputs (PNG):
-   fig1_bandas.png        — bands at large θ vs magic θ (path Γ→K→M→K'→Γ)
-   fig2_barrido_theta.png — W(θ) of the two central bands + v*(θ)/v_F
+   fig1_bands.png        — bands at large θ vs magic θ (path Γ→K→M→K'→Γ)
+   fig2_sweep_theta.png — W(θ) of the two central bands + v*(θ)/v_F
    fig3_dos.png           — DOS: collapse of the van Hove peaks toward E = 0
-   fig4_convergencia.png  — convergence with respect to the momentum cutoff
+   fig4_convergence.png  — convergence with respect to the momentum cutoff
 
  Validations printed to the console:
    (1) the minimum of W(θ) falls at θ ≈ 1.05–1.10°,
@@ -450,11 +450,11 @@ def main():
     ok.append(val1)
     print(f"      VALIDATION 1 — minimum of W in 1.05° ≤ θ* ≤ 1.10°: "
           f"{'✓ PASS' if val1 else '✗ FAIL'}")
-    figura_barrido(thetas, Ws, vs, theta_estrella, "fig2_barrido_theta.png")
+    figura_barrido(thetas, Ws, vs, theta_estrella, "fig2_sweep_theta.png")
 
     # ---- 2) Bands at given θ -------------------------------------------------
     print("\n[2/4] Band structure (Γ→K→M→K'→Γ) at θ = 1.50° and θ = θ*…")
-    figura_bandas(1.50, theta_estrella, NSH, "fig1_bandas.png")
+    figura_bandas(1.50, theta_estrella, NSH, "fig1_bands.png")
 
     # ---- 3) DOS and van Hove collapse ----------------------------------------
     print("\n[3/4] DOS at θ = 1.40°, 1.25°, 1.15° and θ* (24×24 grid)…")
@@ -482,14 +482,14 @@ def main():
     print(f"      Truncation error with N_sh = {NSH}: {err_prod:.4f} meV")
     print(f"      VALIDATION 3 — diagonalization converged with the cutoff: "
           f"{'✓ PASS' if val3 else '✗ FAIL'}")
-    figura_convergencia(cortes, Wc, dims, "fig4_convergencia.png")
+    figura_convergencia(cortes, Wc, dims, "fig4_convergence.png")
 
     print("\n" + "=" * 78)
     print(f" SUMMARY: {sum(ok)}/3 validations passed · "
           f"θ* = {theta_estrella:.3f}° · W(θ*) = {1e3*W_estrella:.2f} meV · "
           f"{time.time()-t0:.0f} s")
-    print(" Figures: fig1_bandas.png, fig2_barrido_theta.png, "
-          "fig3_dos.png, fig4_convergencia.png")
+    print(" Figures: fig1_bands.png, fig2_sweep_theta.png, "
+          "fig3_dos.png, fig4_convergence.png")
     print("=" * 78)
 
 
